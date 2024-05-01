@@ -1,4 +1,7 @@
 import { CheckIcon, ClockIcon } from '@heroicons/react/24/outline';
+
+// Using the clsx library to toggle class names
+// 使用 clsx 來依據不同狀態來切換不同的 css 樣式
 import clsx from 'clsx';
 
 export default function InvoiceStatus({ status }: { status: string }) {
