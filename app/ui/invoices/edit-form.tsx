@@ -10,6 +10,14 @@ import {
 import Link from 'next/link';
 import { Button } from '@/app/ui/button';
 
+// 把 id 傳給 Server Action
+// https://nextjs.org/learn/dashboard-app/mutating-data#4-pass-the-id-to-the-server-action
+import { updateInvoice } from '@/app/lib/actions';
+
+// 表單驗證錯誤提示
+// https://nextjs.org/learn/dashboard-app/improving-accessibility#practice-adding-aria-labels
+import { useFormState } from 'react-dom';
+
 export default function EditInvoiceForm({
   invoice,
   customers,
@@ -17,8 +25,15 @@ export default function EditInvoiceForm({
   invoice: InvoiceForm;
   customers: CustomerField[];
 }) {
+  const initialState = { message: null, errors: {} };
+  const updateInvoiceWithId = updateInvoice.bind(null, invoice.id);
+  const [state, dispatch] = useFormState(updateInvoiceWithId, initialState);
+
   return (
-    <form>
+    // Passing an id as argument won't work
+    // <form action={updateInvoice(id)}>
+    // <form action={updateInvoiceWithId}>
+    <form action={dispatch}>
       <div className="rounded-md bg-gray-50 p-4 md:p-6">
         {/* Customer Name */}
         <div className="mb-4">
@@ -31,6 +46,7 @@ export default function EditInvoiceForm({
               name="customerId"
               className="peer block w-full cursor-pointer rounded-md border border-gray-200 py-2 pl-10 text-sm outline-2 placeholder:text-gray-500"
               defaultValue={invoice.customer_id}
+              aria-describedby="customer-error" // 這個是用來建立 select element 與 error message container 之間的聯繫(container with id="customer-error")
             >
               <option value="" disabled>
                 Select a customer
@@ -42,6 +58,19 @@ export default function EditInvoiceForm({
               ))}
             </select>
             <UserCircleIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500" />
+          </div>
+
+          <div
+            id="customer-error" // id="customer-error" 是用來與 aria-describedby="customer-error" 建立聯繫
+            aria-live="polite" // 當 div 內的錯誤更新時，螢幕閱讀器應禮貌地通知使用者。當內容發生變化時（例如，當用戶更正錯誤時），螢幕閱讀器會宣布這些更改，但僅在用戶空閒時進行，以免打斷它們。
+            aria-atomic="true"
+          >
+            {state.errors?.customerId &&
+              state.errors.customerId.map((error: string) => (
+                <p className="mt-2 text-sm text-red-500" key={error}>
+                  {error}
+                </p>
+              ))}
           </div>
         </div>
 
@@ -60,8 +89,18 @@ export default function EditInvoiceForm({
                 defaultValue={invoice.amount}
                 placeholder="Enter USD amount"
                 className="peer block w-full rounded-md border border-gray-200 py-2 pl-10 text-sm outline-2 placeholder:text-gray-500"
+                aria-describedby="customer-error2"
               />
               <CurrencyDollarIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 peer-focus:text-gray-900" />
+            </div>
+
+            <div id="customer-error2" aria-live="polite" aria-atomic="true">
+              {state.errors?.amount &&
+                state.errors.amount.map((error: string) => (
+                  <p className="mt-2 text-sm text-red-500" key={error}>
+                    {error}
+                  </p>
+                ))}
             </div>
           </div>
         </div>
@@ -97,6 +136,7 @@ export default function EditInvoiceForm({
                   value="paid"
                   defaultChecked={invoice.status === 'paid'}
                   className="h-4 w-4 cursor-pointer border-gray-300 bg-gray-100 text-gray-600 focus:ring-2"
+                  aria-describedby="customer-error3"
                 />
                 <label
                   htmlFor="paid"
@@ -104,6 +144,15 @@ export default function EditInvoiceForm({
                 >
                   Paid <CheckIcon className="h-4 w-4" />
                 </label>
+              </div>
+
+              <div id="customer-error3" aria-live="polite" aria-atomic="true">
+                {state.errors?.status &&
+                  state.errors.status.map((error: string) => (
+                    <p className="mt-2 text-sm text-red-500" key={error}>
+                      {error}
+                    </p>
+                  ))}
               </div>
             </div>
           </div>

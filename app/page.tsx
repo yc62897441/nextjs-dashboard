@@ -8,6 +8,16 @@ import Image from 'next/image';
 
 import { lusitana } from '@/app/ui/fonts';
 
+// 使用 React Server Components(在 server 時就抓資料)去抓資料庫的資料，可以跳過 API 層，直接去搜尋(query)資料庫
+// https://nextjs.org/learn/dashboard-app/fetching-data#database-queries
+// If you are using React Server Components (fetching data on the server), you can skip the API layer, and query your database directly without risking exposing your database secrets to the client.
+
+// React Server Components 的好處
+// 1.支援非同步語法 async/await
+// 2.在 server 執行資料庫搜尋，相關邏輯程式碼不用傳到 client 端
+// 3.可以直接 query 資料庫，不須 API 層
+// https://nextjs.org/learn/dashboard-app/fetching-data#using-server-components-to-fetch-data
+
 export default function Page() {
   return (
     <main className="flex min-h-screen flex-col p-6">

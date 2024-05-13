@@ -1,3 +1,13 @@
+// 靜態生成
+// Static Rendering，在 server 打包專案時 render。好處：Faster Websites、Reduced Server Load、SEO
+// Static rendering 非常適合沒有資料的 UI，或是對所有使用者都使用相同資料的 UI
+// https://nextjs.org/learn/dashboard-app/static-and-dynamic-rendering#what-is-static-rendering
+
+// 實做 Dynamic Rendering
+// Dynamic Rendering，是在每個 client 發送請求時才 render。好處：Real-Time Data、User-Specific Content、Request Time Information
+// https://nextjs.org/learn/dashboard-app/static-and-dynamic-rendering#making-the-dashboard-dynamic
+import { unstable_noStore as noStore } from 'next/cache'; // Note: unstable_noStore is an experimental API and may change in the future.
+
 import { sql } from '@vercel/postgres';
 import {
   CustomerField,
@@ -13,17 +23,27 @@ import { formatCurrency } from './utils';
 export async function fetchRevenue() {
   // Add noStore() here to prevent the response from being cached.
   // This is equivalent to in fetch(..., {cache: 'no-store'}).
+  noStore(); // 實做 Dynamic Rendering，選擇退出靜態渲染(opt out of static rendering.)
 
   try {
+    // 模擬一個很緩慢的 data fetch 行為。
+    // 這個 3 秒的延遲，會導致整個頁面被阻塞住
+    // Dynamic Rendering 產生常見的挑戰：應用程式最快速度的極限，會是最慢的一支 fetch 的最快速度
+    // https://nextjs.org/learn/dashboard-app/static-and-dynamic-rendering#simulating-a-slow-data-fetch
     // Artificially delay a response for demo purposes.
     // Don't do this in production :)
+    console.log('Fetching revenue data...');
+    await new Promise((resolve) => setTimeout(resolve, 3000));
 
-    // console.log('Fetching revenue data...');
-    // await new Promise((resolve) => setTimeout(resolve, 3000));
+    // 解方：Streaming
+    // Streaming 是一種資料移轉技術，把一個 route 拆解成數個 chunks，個別 chunk 好的就先傳到 client 端，client 端可以先看見、操作好了的部分。
+    // 加入 loading.tsx 檔案
+    // https://nextjs.org/learn/dashboard-app/streaming#what-is-streaming
+    // https://nextjs.org/learn/dashboard-app/streaming#streaming-a-whole-page-with-loadingtsx
 
     const data = await sql<Revenue>`SELECT * FROM revenue`;
 
-    // console.log('Data fetch completed after 3 seconds.');
+    console.log('Data fetch completed after 3 seconds.');
 
     return data.rows;
   } catch (error) {
@@ -33,6 +53,8 @@ export async function fetchRevenue() {
 }
 
 export async function fetchLatestInvoices() {
+  noStore();
+
   try {
     const data = await sql<LatestInvoiceRaw>`
       SELECT invoices.amount, customers.name, customers.image_url, customers.email, invoices.id
@@ -53,6 +75,8 @@ export async function fetchLatestInvoices() {
 }
 
 export async function fetchCardData() {
+  noStore();
+
   try {
     // You can probably combine these into a single SQL query
     // However, we are intentionally splitting them to demonstrate
@@ -64,6 +88,8 @@ export async function fetchCardData() {
          SUM(CASE WHEN status = 'pending' THEN amount ELSE 0 END) AS "pending"
          FROM invoices`;
 
+    // 平行抓取資料，使用 Promise.all
+    // https://nextjs.org/learn/dashboard-app/fetching-data#parallel-data-fetching
     const data = await Promise.all([
       invoiceCountPromise,
       customerCountPromise,
@@ -92,6 +118,8 @@ export async function fetchFilteredInvoices(
   query: string,
   currentPage: number,
 ) {
+  noStore();
+
   const offset = (currentPage - 1) * ITEMS_PER_PAGE;
 
   try {
@@ -124,6 +152,8 @@ export async function fetchFilteredInvoices(
 }
 
 export async function fetchInvoicesPages(query: string) {
+  noStore();
+
   try {
     const count = await sql`SELECT COUNT(*)
     FROM invoices
@@ -145,6 +175,8 @@ export async function fetchInvoicesPages(query: string) {
 }
 
 export async function fetchInvoiceById(id: string) {
+  noStore();
+
   try {
     const data = await sql<InvoiceForm>`
       SELECT
@@ -162,6 +194,7 @@ export async function fetchInvoiceById(id: string) {
       amount: invoice.amount / 100,
     }));
 
+    console.log(invoice); // Invoice is an empty array []
     return invoice[0];
   } catch (error) {
     console.error('Database Error:', error);
@@ -170,6 +203,8 @@ export async function fetchInvoiceById(id: string) {
 }
 
 export async function fetchCustomers() {
+  noStore();
+
   try {
     const data = await sql<CustomerField>`
       SELECT
